@@ -19,7 +19,7 @@ while [ $c -le $s ]
 do
 
 echo "$COUNT. >2GB UPLOADING USING PYROGRAM PART$c OF $nm"
-python3 upload.py me "tmp/$c.mp4" "$COUNT. $nm PART$c"
+python3 upload.py me "tmp/$c.mp4" "$fold/$nm PART$c"
 echo -e "\n$COUNT. DONE UPLOADING PART$c of $nm\n"
 
 c=$(($c+1))
@@ -31,7 +31,7 @@ rm -rf tmp*
 
 single_video() {
 echo "$COUNT. <2GB UPLOADING USING PYROGRAM $nm"
-python3 upload.py me "$fold/$nm" "$COUNT. $nm"
+python3 upload.py me "$fold/$nm" "$fold/$nm"
 echo -e "\n$COUNT. DONE UPLOADING $nm\n"
 
 }
@@ -66,10 +66,35 @@ else
 echo "$COUNT. FILE TYPE IS $mime_type"
 if [ $(wc -c "$fold/$nm" | awk '{ print $1 }') -le 2000000000 ]; then
 echo "$COUNT. $mime_type <2GB"
-telegram-upload --to me --caption "$COUNT. $nm" "$fold/$nm"
+python3 upload.py me "$fold/$nm" "$fold/$nm"
 else
 echo "$COUNT. $mime_type >2GB SPLITING"
-telegram-upload --to me --large-files split --caption "$COUNT. $nm" "$fold/$nm"
+
+LARGE_FILE="$fold/$nm"
+MAX_SIZE=1.8G
+FILENAME=${LARGE_FILE##*/}
+EXTENSION=${FILENAME##*.}
+FILENAME=${FILENAME%.*}
+
+split -b $MAX_SIZE -d --additional-suffix=.$EXTENSION "$LARGE_FILE" "$FILENAME-part"
+c=1
+# GETTING HOW MANY LINES IN URL FILE
+s=$(ls -l *part* | grep "^-" | wc -l)
+#STOP=1
+while [ $c -le $s ]
+do
+
+upn=$(ls *part0$c*)
+echo "$COUNT. >2GB UPLOADING USING PYROGRAM PART$c OF $nm"
+python3 upload.py me "$upn" "$fold/$nm PART$c"
+echo -e "\n$COUNT. DONE UPLOADING PART$c of $nm\n"
+
+c=$(($c+1))
+done
+
+echo -e "$COUNT. DONE UPLOADING TOTAL $s PARTS OF $nm\n"
+rm -rf *part*
+
 fi
 fi
 
